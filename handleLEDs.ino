@@ -36,6 +36,7 @@ void handleLEDs() {
   static uint8_t nSteps;
   static bool oldProximityDetected;
   static bool oldMusicPlaying;
+  static bool updateColour;
 
   // Handle proximity sensor state.
   if (proximityDetected != oldProximityDetected &&          // Change of state; act upon this,
@@ -143,6 +144,15 @@ void handleLEDs() {
           lastFadeTime = millis();
         }
         break;
+
+      case LED_MUSIC:
+        if (updateColour) {
+          updateColour = false;
+          setLEDs(musicHue, 0,
+                  musicSaturation, 0,
+                  0, 0);
+        }
+        break;
     }
   }
 
@@ -150,7 +160,35 @@ void handleLEDs() {
   // Holding hand above the sensor: rotate through the colour spectrum.
   // Moving hand up/down: increase/decrease saturation.
 
-  
+  static uint32_t lastChange;
+  if (millis() - lastChange > 20) {
+    lastChange = millis();
+    if (bitRead(motionState, MOTION_UP)) {
+      Serial.print(F("Motion up - "));
+      if (musicSaturation < 255) {
+        musicSaturation++;
+        updateColour = true;
+        Serial.print(F("S: "));
+        Serial.println(musicSaturation);
+      }
+    }
+    if (bitRead(motionState, MOTION_DOWN)) {
+      Serial.print(F("Motion down - "));
+      if (musicSaturation > 0) {
+        musicSaturation--;
+        updateColour = true;
+        Serial.print(F("S: "));
+        Serial.println(musicSaturation);
+      }
+    }
+    if (bitRead(motionState, HAND_PRESENT)) {
+      Serial.println(F("Hand present."));
+      musicHue++;
+      updateColour = true;
+      Serial.print(F("H: "));
+      Serial.println(musicHue);
+    }
+  }
 }
 
 void setLEDs(uint8_t fromHue, uint8_t toHue,
@@ -164,6 +202,6 @@ void setLEDs(uint8_t fromHue, uint8_t toHue,
     hue = (float)fromHue + ((float)toHue - (float)fromHue) * (float)fadeStep / (float)nSteps;
     saturation = (float)fromSaturation + ((float)toSaturation - (float)fromSaturation) * (float)fadeStep / (float)nSteps;
   }
-  
+
   FastLED.showColor(CHSV(hue, saturation, value));
 }

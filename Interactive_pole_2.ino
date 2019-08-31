@@ -15,9 +15,10 @@ DFRobotDFPlayerMini myDFPlayer;
 // Bits to set when a specific movement is detected.
 #define MOTION_DOWN     0                                   // Hand moving down.
 #define MOTION_UP       1                                   // Hand moving up.
-#define HAND_PRESENTED  2                                   // Hand presented above the sensor.
-#define HAND_REMOVED    3                                   // Hand removed from above the sensor.
+#define HAND_PRESENTED  2                                   // Hand presented above the sensor (state change).
+#define HAND_REMOVED    3                                   // Hand removed from above the sensor (state change).
 #define SWIPE           4                                   // Hand swiped over the sensor.
+#define HAND_PRESENT    5                                   // Hand held above the sensor.
 uint8_t motionState;
 bool musicPlaying;
 

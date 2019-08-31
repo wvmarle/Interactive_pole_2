@@ -33,9 +33,11 @@ void analyseMotion(uint8_t &state) {
   uint8_t nDown = 0;
   uint16_t totalUp = 0;
   uint16_t totalDown = 0;
+  uint8_t present = 0;
   state = 0;
   for (uint8_t i = 0; i < 10; i++) {
     if (readings[i] > MIN_DISTANCE && readings[i] < MAX_DISTANCE) { // Only use measurment if hand was detected.
+      present++;
       if (readings[i] > readings[i + 1]) {                  // Higher reading - moved up.
         nUp++;
         totalUp += readings[i] - readings[i + 1];
@@ -51,6 +53,14 @@ void analyseMotion(uint8_t &state) {
   // total movement in that direction to be >30 mm. This to filter out noise.
   bitWrite(state, MOTION_DOWN, (nDown > 7 && totalDown > 30));
   bitWrite(state, MOTION_UP, (nUp > 7 && totalUp > 30));
+  if (bitRead(state, MOTION_DOWN) == false &&
+      bitRead(state, MOTION_UP) == false &&
+      present > 7) {
+    bitSet(state, HAND_PRESENT);
+//    Serial.println(F("Hand present."));
+  }
+//  if (bitRead(state, MOTION_DOWN)) Serial.println(F("Motion down."));
+//  if (bitRead(state, MOTION_UP)) Serial.println(F("Motion up."));
 
   // Hand presented/removed.
   bool handPresented = true;
@@ -79,6 +89,8 @@ void analyseMotion(uint8_t &state) {
       }
     }
   }
+//  if (handPresented) Serial.println(F("Hand presented."));
+//  if (handRemoved) Serial.println(F("Hand removed."));
   bitWrite(state, HAND_PRESENTED, handPresented);
   bitWrite(state, HAND_REMOVED, handRemoved);
 
@@ -101,22 +113,22 @@ void analyseMotion(uint8_t &state) {
     }
   }
   bitWrite(state, SWIPE, swipe);
+//  if (swipe) Serial.println(F("Swipe."));
 
   static uint32_t lastMotionDetected;
   static bool haveMotion;
   static bool eepromUpdated;
-  if (state == 0 &&
-      haveMotion == true) {                                         // No more motion detected.
+  if (state == 0) {                                         // No more motion detected.
     haveMotion = false;
-    lastMotionDetected = millis();
   }
   else {
     haveMotion = true;
     eepromUpdated = false;
+    lastMotionDetected = millis();
   }
 
   if (haveMotion == false &&
-    eepromUpdated == false &&
+      eepromUpdated == false &&
       millis() - lastMotionDetected > 5000) {
     updateEEPROM();
     eepromUpdated = true;
